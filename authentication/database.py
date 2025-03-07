@@ -4,15 +4,18 @@ from typing import Iterator
 from alembic import command
 from alembic.config import Config
 from sqlalchemy.future import Engine
-from sqlmodel import Session, create_engine, sessionmaker
+from sqlalchemy.orm import sessionmaker, Session as SQLAlchemySession
+from sqlmodel import create_engine
 from authentication.settings import Settings
+
 
 @lru_cache(maxsize=1)
 def get_engine() -> Engine:
     """
     Creates a postgres engine
     """
-    postgres_url = f"postgresql://{Settings.DB_USER}:{Settings.DB_PASSWORD}@{Settings.DB_HOST}:{Settings.DB_PORT}/zn_tanklayouts"  # pylint: disable=line-too-long
+    settings = Settings()
+    postgres_url = f"postgresql://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"  # pylint: disable=line-too-long
     return create_engine(
         postgres_url,
         pool_size=100,
@@ -30,11 +33,12 @@ def get_engine() -> Engine:
         },
     )
 
+
 engine = get_engine()
-SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-def get_session() -> Iterator[Session]:
+def get_session() -> Iterator[SQLAlchemySession]:
     with SessionLocal() as session:
         yield session
 
