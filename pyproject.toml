@@ -3,7 +3,7 @@ name = "partner-onboarding"
 version = "0.1.0"
 description = "onboarding and authenticating partner"
 authors = ["BMC"]
-
+packages = [{ include = "authentication" }]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -15,6 +15,7 @@ pyjwt = "^2.6.0"
 fastapi = "0.96.0"
 httpx = "^0.23.1"
 pydantic = "^1.10.2"
+ddtrace = "^3.2.0"
 
 
 
