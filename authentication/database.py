@@ -15,7 +15,7 @@ def get_engine() -> Engine:
     Creates a postgres engine
     """
     settings = Settings()
-    postgres_url = f"postgresql://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"  # pylint: disable=line-too-long
+    postgres_url = f"postgresql+psycopg2://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"  # pylint: disable=line-too-long
     return create_engine(
         postgres_url,
         pool_size=100,
