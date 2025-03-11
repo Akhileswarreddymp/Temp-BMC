@@ -1,5 +1,6 @@
-import redis
+# type: ignore
 from threading import Lock
+import redis
 from authentication.settings import Settings
 
 
@@ -19,7 +20,7 @@ class RedisClient:
                 password=settings.REDIS_PASSWORD,
                 db=settings.REDIS_DB,
                 max_connections=100,
-                decode_responses=True
+                decode_responses=True,
             )
 
         cls._client = redis.Redis(connection_pool=cls._pool)
@@ -29,7 +30,7 @@ class RedisClient:
         except Exception as exception:
             cls._client = None
             cls._pool = None
-            raise RuntimeError(f"Redis connection failed {exception}")
+            raise RuntimeError(f"Redis connection failed {exception}") from exception
 
     @classmethod
     def get_client(cls):
@@ -45,5 +46,5 @@ def get_redis_client():
     """FastAPI dependency for Redis client."""
     try:
         return RedisClient.get_client()
-    except RuntimeError as e:
-        raise RuntimeError(f"Redis connection error: {e}")
+    except RuntimeError as error:
+        raise RuntimeError(f"Redis connection error: {error}") from error

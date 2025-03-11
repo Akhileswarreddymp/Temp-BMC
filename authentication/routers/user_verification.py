@@ -13,9 +13,9 @@ router = APIRouter(
 
 @router.post("/send-email-otp/")
 async def send_email(email_data: EmailValidation):
-    response = await EmailService.send_email(email_data.email_id,EMAIL_SUBJECT)
-    
+    response = await EmailService.send_email(email_data.email_id, EMAIL_SUBJECT)
+
     if "error" in response:
         raise HTTPException(status_code=400, detail=response["error"])
-    
+
     return response

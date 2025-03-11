@@ -1,10 +1,11 @@
-import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from authentication.settings import Settings
+import aiosmtplib
+from fastapi import HTTPException
 from jinja2 import Template
-
+from authentication.settings import Settings
 from authentication.utils.utils import generate_otp
+
 
 class EmailService:
     @staticmethod
@@ -17,27 +18,31 @@ class EmailService:
         except FileNotFoundError:
             return f"<p>Hello Welcome to BMC, your OTP is: <b>{otp}</b></p>"
 
-
-
     @staticmethod
     async def send_email(to_email: str, subject: str):
         settings = Settings()
         try:
             otp = await generate_otp()
-            msg = MIMEMultipart()
             body = await EmailService.render_otp_email(otp)
+
+            msg = MIMEMultipart()
             msg["From"] = settings.SMTP_FROM_EMAIL
             msg["To"] = to_email
             msg["Subject"] = subject
+            msg.attach(MIMEText(body, "html"))
 
-            msg.attach(MIMEText(body, "html"))  # Send as HTML
-
-            with smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT) as server:
-                server.starttls()
-                server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-                server.sendmail(settings.SMTP_FROM_EMAIL, to_email, msg.as_string())
+            smtp = aiosmtplib.SMTP(
+                hostname=settings.SMTP_SERVER, port=settings.SMTP_PORT, use_tls=True
+            )
+            await smtp.connect()
+            await smtp.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
+            await smtp.sendmail(settings.SMTP_FROM_EMAIL, to_email, msg.as_string())
+            await smtp.quit()
 
             return {"message": "Email sent successfully"}
 
-        except Exception as e:
-            return {"error": str(e)}
+        except Exception as error:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An unexpected error occurred while sending email: {error}",
+            ) from error

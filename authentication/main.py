@@ -14,6 +14,7 @@ app = FastAPI(
 app.add_middleware(TraceMiddleware, tracer=tracer)
 app.include_router(otp_route)
 
+
 @app.get("/")
 async def read_root() -> dict:
     return {"message": "Successfully connected to the API"}
