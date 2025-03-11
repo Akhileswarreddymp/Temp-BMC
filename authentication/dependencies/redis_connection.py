@@ -1,50 +1,46 @@
 # type: ignore
-from threading import Lock
-import redis
+import asyncio
+import aioredis
 from authentication.settings import Settings
-
 
 class RedisClient:
     _pool = None
     _client = None
-    _lock = Lock()
+    _lock = asyncio.Lock()
 
     @classmethod
-    def _initialize(cls):
-        """Initialize Redis connection pool and client."""
+    async def _initialize(cls):
+        """Initialize Redis connection pool and async client."""
         settings = Settings()
         if cls._pool is None:
-            cls._pool = redis.ConnectionPool(
-                host=settings.REDIS_HOST,
-                port=settings.REDIS_PORT,
+            cls._pool = aioredis.ConnectionPool.from_url(
+                f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}",
                 password=settings.REDIS_PASSWORD,
                 db=settings.REDIS_DB,
-                max_connections=100,
                 decode_responses=True,
+                max_connections=100,
             )
 
-        cls._client = redis.Redis(connection_pool=cls._pool)
+        cls._client = aioredis.Redis(connection_pool=cls._pool)
 
         try:
-            cls._client.ping()
+            await cls._client.ping()
         except Exception as exception:
             cls._client = None
             cls._pool = None
-            raise RuntimeError(f"Redis connection failed {exception}") from exception
+            raise RuntimeError(f"Redis connection failed: {exception}") from exception
 
     @classmethod
-    def get_client(cls):
-        """Returns a Redis client instance."""
-        if cls._client is None:
-            with cls._lock:
-                if cls._client is None:
-                    cls._initialize()
+    async def get_client(cls):
+        """Returns an async Redis client instance with connection pooling."""
+        async with cls._lock:
+            if cls._client is None:
+                await cls._initialize()
         return cls._client
 
-
-def get_redis_client():
-    """FastAPI dependency for Redis client."""
+async def get_redis_client():
+    """FastAPI dependency for async Redis client."""
     try:
-        return RedisClient.get_client()
+        return await RedisClient.get_client()
     except RuntimeError as error:
         raise RuntimeError(f"Redis connection error: {error}") from error
