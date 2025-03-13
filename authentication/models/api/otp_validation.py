@@ -6,4 +6,7 @@ class EmailValidation(BaseModel):
 
 class RedisOtp(BaseModel):
     key: str
-    otp: int
+    otp: str
+
+class SuccessResponse(BaseModel):
+    message: str
